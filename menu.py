@@ -10,7 +10,7 @@ __date__ = '7/28/14'
 
 import speech, sys, ui
 import help, util
-from tasklist import Task, TaskList
+import tasklist ; reload(tasklist)
 
 class TextDelegate(object):
     def textfield_did_change(self, textfield):
@@ -22,7 +22,7 @@ class Menu:
     def __init__(self):
         """Initialize the task list."""
 
-        self.tasklist = TaskList()
+        self.tasklist = tasklist.TaskList()
         self.current_task = ''
         self.current_task_file = ''
         self.main_view = ''
@@ -37,9 +37,6 @@ class Menu:
         self.message_dialog['label1'].text = message
         self.message_dialog.present('popover', popover_location=(500, 500))
 
-    def say_message(self, message):
-        speech.say(message, self.language, self.speech_rate)
-
     def show_tasks(self, sender, tasks=None):
         """Display the tasks (in ID order)
 
@@ -49,7 +46,7 @@ class Menu:
         if not tasks:
             tasks = self.tasklist.tasks
         tv_text = ""
-        if len(tasks) > 0:
+        if tasks:
             if not self.controls_enabled:
                 #enable controls if there are tasks loaded
                 self.main_view['button_number'].enabled = True
@@ -90,57 +87,6 @@ class Menu:
         self.task_textview.text = '\n\n'.join(priority_text(p, tasks)
                                 for p in 'High Medium Low'.split())
 
-    '''
-    def show_tasks_by_priority(self, sender, tasks=None):
-        """Display the tasks (in Priority order)
-
-        :param tasks: tasks object
-        """
-
-        low_dict = OrderedDict()
-        med_dict = OrderedDict()
-        high_dict = OrderedDict()
-
-        if not tasks:
-            tasks = self.tasklist.tasks
-        tv_text = ''
-
-        if len(tasks) > 0:
-            for task in tasks:
-                if task.priority == 'Low':
-                    low_dict[task.id] = [task.note, task.priority, task.tags]
-                if task.priority == 'Medium':
-                    med_dict[task.id] = [task.note, task.priority, task.tags]
-                if task.priority == 'High':
-                    high_dict[task.id] = [task.note, task.priority, task.tags]
-        else:
-            tv_text += '\nThere are no tasks to display!\n'
-            return
-
-        tv_text += 'High\n' + '-' * 20 + '\n'
-        if len(high_dict) > 0:
-            for key in high_dict:
-                tv_text += '{}: {}\n\tTags: {}\n'.format(key, high_dict[key][0], high_dict[key][2])
-        else:
-            tv_text += 'There are no high priority tasks\n'
-
-        tv_text += '\nMedium\n' + '-' * 20 + '\n'
-        if len(med_dict) > 0:
-            for key in med_dict:
-                tv_text += '{}: {}\n\tTags: {}\n'.format(key, med_dict[key][0], med_dict[key][2])
-        else:
-            tv_text += 'There are no medium priority tasks\n'
-
-        tv_text += '\nLow\n' + '-' * 20 + '\n'
-        if len(low_dict) > 0:
-            for key in low_dict:
-                tv_text += '{}: {}\n\tTags: {}\n'.format(key, low_dict[key][0], low_dict[key][2])
-        else:
-            tv_text += 'There are no low priority tasks\n'
-
-        self.task_textview.text = tv_text
-    '''
-
     def prompt_search(self, sender):
         """Prompt the user for a search string."""
 
@@ -179,12 +125,7 @@ class Menu:
 
         note = self.add_dialog['textfield_task'].text
         priority_num = self.add_dialog['segmentedcontrol1'].selected_index
-        if priority_num == 0:
-            priority = 'Low'
-        elif priority_num == 1:
-            priority = 'Medium'
-        elif priority_num == 2:
-            priority = 'High'
+        priority = 'Low Medium High'.split()[priority_num]
         tags = self.add_dialog['textfield_tags'].text
         self.tasklist.add_task(note, priority, tags)
         self.add_dialog.close()
@@ -263,12 +204,7 @@ class Menu:
 
         self.current_task.note = self.modify_dialog['textfield_task'].text
         priority_num = self.modify_dialog['segmentedcontrol1'].selected_index
-        if priority_num == 0:
-            self.current_task.priority = 'Low'
-        elif priority_num == 1:
-            self.current_task.priority = 'Medium'
-        elif priority_num == 2:
-            self.current_task.priority = 'High'
+        self.current_task.priority = 'Low Medium High'.split()[priority_num]
         self.current_task.tags = self.modify_dialog['textfield_tags'].text
         self.modify_dialog.close()
         self.show_tasks(None)
@@ -291,7 +227,7 @@ class Menu:
                 self.load_dialog.close()
                 self.tasklist.tasks = util.load(task_file)
                 self.current_task_file = task_file
-                Task.last_id = len(self.tasklist.tasks)
+                tasklist.Task.last_id = len(self.tasklist.tasks)
                 self.show_tasks(None)
             else:
                 self.display_message(self.load_dialog['textfield1'].text + ' is not a valid file')
@@ -355,6 +291,7 @@ class Menu:
 
     def process_speak_request(self, sender):
         """""Determine which task(s) to recite"""
+        #print('process_speak_request')
 
         recite = self.prompt_dialog["segmentedcontrol1"].selected_index
         if recite == 0:
@@ -377,7 +314,7 @@ class Menu:
 
         if not task:
             return
-        if len(task.tags) > 0:
+        if task.tags:
             fmt = "Task number {}, priority: {}, {}, This task has the following tags: {}"
             msg = fmt.format(task.id, task.priority, task.note, ' and '.join(task.tags.split()))
         else:
@@ -476,7 +413,6 @@ class Menu:
         self.main_view = main_view
         self.task_textview = main_view['task_textview']
         self.task_textview.text = help.help_text
-
 
 if __name__ == '__main__':
     Menu().run()

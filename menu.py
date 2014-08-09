@@ -13,7 +13,7 @@ import help, util
 import tasklist; reload(tasklist)
 
 class Menu:
-    
+
     def __init__(self):
         """Initialize the task list."""
 
@@ -24,7 +24,7 @@ class Menu:
         self.controls_enabled = False
         self.language = 'en-GB'
         self.speech_rate = 0.3
-        
+
     def display_message(self, message):
         """Display any warnings or errors to the user."""
 
@@ -407,8 +407,8 @@ class Menu:
             view = textfield.superview
             button = view['button_save']
             button.enabled = textfield.text != ''
-            
-        
+
+
     def textfield_should_return(self, textfield):
         if textfield.name == 'txt_speak_number':
             self.process_speak_request(None)
